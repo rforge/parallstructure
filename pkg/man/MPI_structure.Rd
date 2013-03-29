@@ -137,57 +137,6 @@ see example data file and joblist file:
 
 \examples{
 
-#FOR UNIX:
-
-system('mkdir structure_results') # creat a directory to store results
-data(structure_data)			  # call data file 
-data(structure_jobs)			  # call joblist file
-
-## write input files in current working directory ####
-write(t(structure_jobs),ncol=length(structure_jobs[1,]),file='joblist1.txt')
-write(t(structure_data),ncol=length(structure_data[1,]),file='example_data.txt')
-#########################################
-
-
-### call MPI_structure for the given example
-### output files are stored in "structure_results/"
-
-# You have added the path of STRUCTURE executable into /usr/local/bin:
-
-MPI_structure(structure_path=NULL,joblist='joblist1.txt',n_cpu=4,infile='example_data.txt',outpath='structure_results/',numinds=987,numloci=9,printqhat=1)
-
-OTHERWISE
-
-Mac_path="/Applications/Structure.app/Contents/Resources/Java/bin/"
-
-# (Check the "Mac_path" variable is correct ):
-MPI_structure(structure_path=Mac_path,joblist='joblist1.txt',n_cpu=4,infile='example_data.txt',outpath='structure_results/',numinds=987,numloci=9,printqhat=1)
-
-#FOR WINDOWS:
-
-
-shell('mkdir structure_results') # creat a directory to store results
-data(structure_data)			  # call data file 
-data(structure_jobs)			  # call joblist file
-
-## write input files in current working directory ####
-write(t(structure_jobs),ncol=length(structure_jobs[1,]),file='joblist1.txt')
-write(t(structure_data),ncol=length(structure_data[1,]),file='example_data.txt')
-#########################################
-
-
-### call MPI_structure for the given example
-### output files are stored in "structure_results/"
-
-# You have added the path of STRUCTURE executable into your environment variable:
-
-MPI_structure(structure_path=NULL,joblist='joblist1.txt',n_cpu=4,infile='example_data.txt',outpath='structure_results/',numinds=987,numloci=9,printqhat=1)
-
-OTHERWISE
-
-Windows_path="c:/Program Files (x86)/Structure2.3.4/bin/"
-
-#  (Check the "Windows_path" variable is correct  for your version of STRUCTURE):
-MPI_structure(structure_path=Windows_path,joblist='joblist1.txt',n_cpu=4,infile='example_data.txt',outpath='structure_results/',numinds=987,numloci=9,printqhat=1)
+# see EXAMPLE section in .pdf document
 
 }
