@@ -47,12 +47,6 @@ echo $contents; } ?>
 
 
 
-<h3>Downloads.</h3>
-
-<b>binary</b> <a href="ParallelStructure_1.0.tar.gz">ParallelStructure1.0.tar.gz</a>.<br>
-
-
-
 <b>documentation PDF</b> <a href="ParallelStructure.pdf">ParallelStructure1.0_documentation.pdf</a>.<br>
 
 
