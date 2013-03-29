@@ -128,7 +128,7 @@ see example data file and joblist file:
 \examples{
 
 
-FOR UNIX:
+#FOR UNIX:
 
 system('mkdir structure_results') # creat a directory to store results
 data(structure_data)			  # call data file 
@@ -155,7 +155,7 @@ Mac_path="/Applications/Structure.app/Contents/Resources/Java/bin/"
 parallel_structure(structure_path=Mac_path,joblist='joblist1.txt',n_cpu=4,infile='example_data.txt',outpath='structure_results/',numinds=987,numloci=9,printqhat=1)
 
 
-FOR WINDOWS:
+#FOR WINDOWS:
 
 
 shell('mkdir structure_results') # creat a directory to store results
