@@ -24,7 +24,7 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 		startatpopinfo=0,metrofreq=10,updatefreq=1,printqhat=0){
 			
 	
-		library("parallel")
+		require(parallel)
 			
 	# create a list of global parameters common to all jobs. To be shared with slave nodes
 	GlobPar=list(numloci=numloci,label=label,popdata=popdata,popflag=popflag,locdata=locdata,phenotypes=phenotypes,markernames=markernames,mapdist=mapdist,onerowperind=onerowperind,phaseinfo=phaseinfo,recessivealleles=recessivealleles,phased=phased,extracol=extracol,missing=missing,ploidy=ploidy,noadmix=noadmix,linkage=linkage,usepopinfo=usepopinfo,locprior=locprior,inferalpha=inferalpha,alpha=alpha,popalphas=popalphas,unifprioralpha=unifprioralpha,alphamax=alphamax,alphapropsd=alphapropsd,freqscorr=freqscorr,onefst=onefst,fpriormean=fpriormean,fpriorsd=fpriorsd,inferlambda=inferlambda,lambda=lambda,computeprob=computeprob,pfromflagonly=pfromflagonly,ancestdist=ancestdist,startatpopinfo=startatpopinfo,metrofreq=metrofreq,updatefreq=updatefreq,printqhat=printqhat)
@@ -47,17 +47,25 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 	###############################
 
 
-	dat=as.matrix(read.table(data_name))
-	list_all_pop=unique(dat[,1])
-	Npop=length(list_all_pop)
+			if (markernames==1){
+				mark_line=as.matrix(read.table(data_name,nrows=1))
+				dat=as.matrix(read.table(data_name,skip=1))
+			}
+			
+			if (markernames==0){
+				mark_line=NULL
+				dat=as.matrix(read.table(data_name))
+			}
+# list_all_pop=unique(dat[,1])  # 08042013
+			if (label==1) list_all_pop=unique(dat[,2])
+			if (label==0) list_all_pop=unique(dat[,1])
+			Npop=length(list_all_pop)
 
 						
-	if (onerowperind==0 & markernames==0) nind=(length(dat[,1]))/2
-	if (onerowperind==1 & markernames==0) nind=length(dat[,1])
-	if (onerowperind==0 & markernames==1) nind=((length(dat[,1]))-1)/2
-	if (onerowperind==1 & markernames==1) nind=(length(dat[,1]))-1
-						
-	
+			if (onerowperind==0) nind=(length(dat[,1]))/2
+			if (onerowperind==1) nind=length(dat[,1])
+			
+			
 	if (nind!=numinds) {
 		m=paste('Error: expected ',numinds,' individuals and found ', nind,' please check data file')
 		stop(m)
@@ -121,14 +129,17 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 		
 		subdata=NULL
 		for (pop in job_pop){
-			sub=subset(dat,dat[,1]==pop)
+#			sub=subset(dat,dat[,1]==pop) 08042013 
+			if (label==1) sub=subset(dat,dat[,2]==pop)
+			if (label==0) sub=subset(dat,dat[,1]==pop)
 			subdata=rbind(subdata,sub)
 		}
 		
 		
 		
 		in_nam=paste('data_job_',id,sep='')
-		write(t(subdata),ncol=length(subdata[1,]),file=in_nam)  # write data subset with unique task name-tag
+		if (markernames==1) write(mark_line,ncol=length(mark_line),file=in_nam)  # write markernames
+		write(t(subdata),ncol=length(subdata[1,]),file=in_nam,append=T)  # write data subset with unique task name-tag
 		# generate parameted file for structure 
 		param_nam=paste('parameter_job_',as.character(id),sep='')
 		out_nam=paste(outpath,'results_job_',as.character(id),sep='')
@@ -179,14 +190,16 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 				
 				subdata=NULL
 				for (pop in job_pop){
-					sub=subset(dat,dat[,1]==pop)
+					if (label==1) sub=subset(dat,dat[,2]==pop)
+					if (label==0) sub=subset(dat,dat[,1]==pop)
 					subdata=rbind(subdata,sub)
 				}
 				
 				
 				
 				in_nam=paste('data_job_',id,sep='')
-				write(t(subdata),ncol=length(subdata[1,]),file=in_nam)  # write data subset with unique task name-tag
+				if (markernames==1) write(mark_line,ncol=length(mark_line),file=in_nam)  # write markernames
+				write(t(subdata),ncol=length(subdata[1,]),file=in_nam,append=T)  # write data subset with unique task name-tag
 # generate parameted file for structure 
 				param_nam=paste('parameter_job_',as.character(id),sep='')
 				out_nam=paste(outpath,'results_job_',as.character(id),sep='')

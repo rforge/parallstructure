@@ -117,7 +117,8 @@ MPI_structure requires:
 }
 \references{
 
-Besnier F, Glover KA ParallelStructure: a R package to distribute parallel runs of the population genetics program STRUCTURE on multi-core computers. To be submitted
+Besnier F, Glover KA ParallelStructure: a R package to distribute parallel runs of the population genetics program STRUCTURE on multi-core computers. submitted
+
 
 Rmpi website: http://www.stats.uwo.ca/faculty/yu/Rmpi/
  

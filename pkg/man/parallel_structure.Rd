@@ -107,9 +107,11 @@ The function uses \link{parallel-package} to pilot serial STRUCTURE jobs in para
 }
 \references{
 
-Besnier F, Glover KA ParallelStructure: a R package to distribute parallel runs of the population genetics program STRUCTURE on multi-core computers. To be submitted
+Besnier F, Glover KA ParallelStructure: a R package to distribute parallel runs of the population genetics program STRUCTURE on multi-core computers. submitted
+
 
 \link{parallel-package} 
+
 
  STRUCTURE website:  http://pritch.bsd.uchicago.edu/software.html  
 
@@ -128,6 +130,7 @@ see example data file and joblist file:
 }
 
 \examples{
+
 ## Run according to your platform (windows/Unix) and version of STRUCTURE
 
 ##FOR UNIX:
@@ -139,7 +142,6 @@ see example data file and joblist file:
 ## write input files in current working directory ####
 #	write(t(structure_jobs),ncol=length(structure_jobs[1,]),file='joblist1.txt')
 #	write(t(structure_data),ncol=length(structure_data[1,]),file='example_data.txt')
-
 
 
 ### call parallel_structure for the given example

@@ -19,7 +19,7 @@ function(loc=NULL,list_jobs,x_width,y_height){
 		}
 		
 ############# get population limits ###########
-		pops=dat[,1]
+		pops=dat[,2]
 
 		lpop=unique(pops)
 		lim=c(0)
