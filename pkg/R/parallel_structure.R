@@ -49,12 +49,12 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 
 			if (markernames==1){
 				mark_line=as.matrix(read.table(data_name,nrows=1))
-				dat=as.matrix(read.table(data_name,skip=1))
+				dat=as.matrix(read.table(data_name,skip=1,colClasse="character"))
 			}
 			
 			if (markernames==0){
 				mark_line=NULL
-				dat=as.matrix(read.table(data_name))
+				dat=as.matrix(read.table(data_name,colClasse="character"))
 			}
 # list_all_pop=unique(dat[,1])  # 08042013
 			if (label==1) list_all_pop=unique(dat[,2])
@@ -109,8 +109,8 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 			
 			
 			
-	slave_fun_unix=function(job){
-#Mac_path="/Applications/Structure.app/Contents/Resources/Java/bin/"	
+	slave_fun_unix=function(job){									####### UNIX function
+	
 		structure_path=job$path
 		id=job$id
 		job_pop=job$job_pop   # list populaiton for this job
@@ -119,13 +119,23 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 		iter=as.character(job$iter)
 		
 		########################
-		temp_nam=paste('temp_list_job_',as.character(id),sep='')
-		write(job_pop,file=temp_nam)
-		job_pop=as.matrix(read.table(temp_nam,sep=','))
-		instr=paste('rm ',temp_nam,sep='')
-		system(instr)
+		#split list of pop_id
 		
-		#### create a data subset for the poulations of the given job
+		T_job_pop=strsplit(job_pop,',')
+		job_pop=T_job_pop[[1]]
+		
+		pop_nr=1:length(job_pop)  
+		if (usepopinfo==1){
+		# number the populations of the given job from 1 to n as STRUCTURE needs pop id that matches 1..K
+			convert=vector('list')
+			for (pop in pop_nr){
+				convert[[job_pop[pop]]]=pop	
+			}
+			
+			
+		}
+		
+		#### create a data subset for the populations of the given job
 		
 		subdata=NULL
 		for (pop in job_pop){
@@ -135,11 +145,30 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 			subdata=rbind(subdata,sub)
 		}
 		
-		
-		
+		## replace sub dataset column of popID by converted ids
+		if (usepopinfo==1 & label==1){
+			ID1=subdata[,2]
+			ID2=ID1
+			for (i in 1:length(ID1)){
+				ID2[i]=convert[[ID1[i]]]
+			}
+			subdata[,2]=ID2
+		}
+		if (usepopinfo==1 & label==0){
+			ID1=subdata[,1]
+			ID2=ID1
+			for (i in 1:length(ID1)){
+				ID2[i]=convert[[ID1[i]]]
+			}
+			subdata[,1]=ID2
+		}
+		############################	
+		## write temprary sub data file
 		in_nam=paste('data_job_',id,sep='')
 		if (markernames==1) write(mark_line,ncol=length(mark_line),file=in_nam)  # write markernames
 		write(t(subdata),ncol=length(subdata[1,]),file=in_nam,append=T)  # write data subset with unique task name-tag
+		
+		
 		# generate parameted file for structure 
 		param_nam=paste('parameter_job_',as.character(id),sep='')
 		out_nam=paste(outpath,'results_job_',as.character(id),sep='')
@@ -159,6 +188,17 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 		instr=paste('rm ',in_nam,sep='')
 		system(instr)
 		
+		#### reverse the pop ID conversion in output q_hat file #####
+		if (usepopinfo==1 & printqhat==1){
+			
+			res_name=paste(out_nam,'_q',sep='')
+			res=as.matrix(read.table(res_name))
+			res[,2]=ID1
+			write(t(res),ncol=length(res[1,]),file=res_name)
+		}
+		#################################################################
+		
+		
 		nr=job$id
 		m1=paste('job ',as.character(nr),sep='')
 		m2=paste('was calculated ','',sep='')
@@ -170,8 +210,8 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 				
 	}
 			
-			slave_fun_windows=function(job){
-#Mac_path="/Applications/Structure.app/Contents/Resources/Java/bin/"	
+			slave_fun_windows=function(job){#					## WINDOWS function
+	
 				structure_path=job$path
 				id=job$id
 				job_pop=job$job_pop   # list populaiton for this job
@@ -179,14 +219,23 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 				burnin=as.character(job$burnin)
 				iter=as.character(job$iter)
 				
-########################
-				temp_nam=paste('temp_list_job_',as.character(id),sep='')
-				write(job_pop,file=temp_nam)
-				job_pop=as.matrix(read.table(temp_nam,sep=','))
-				instr=paste('del ',temp_nam,sep='')
-				shell(instr)
+				########################
+				#split list of pop_id
 				
-#### create a data subset for the poulations of the given job
+				T_job_pop=strsplit(job_pop,',')
+				job_pop=T_job_pop[[1]]
+				
+				pop_nr=1:length(job_pop)  
+				if (usepopinfo==1){
+				# number the populations of the given job from 1 to n as STRUCTURE needs pop id that matches 1..K
+					convert=vector('list')
+					for (pop in pop_nr){
+						convert[[job_pop[pop]]]=pop	
+					}
+					
+					
+				}				
+				#### create a data subset for the populations of the given job
 				
 				subdata=NULL
 				for (pop in job_pop){
@@ -195,18 +244,36 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 					subdata=rbind(subdata,sub)
 				}
 				
-				
-				
+				## replace sub dataset column of popID by converted ids
+				if (usepopinfo==1 & label==1){
+					ID1=subdata[,2]
+					ID2=ID1
+					for (i in 1:length(ID1)){
+						ID2[i]=convert[[ID1[i]]]
+					}
+					subdata[,2]=ID2
+				}
+				if (usepopinfo==1 & label==0){
+					ID1=subdata[,1]
+					ID2=ID1
+					for (i in 1:length(ID1)){
+						ID2[i]=convert[[ID1[i]]]
+					}
+					subdata[,1]=ID2
+				}
+				############################
+				## write temporary sub data file
 				in_nam=paste('data_job_',id,sep='')
 				if (markernames==1) write(mark_line,ncol=length(mark_line),file=in_nam)  # write markernames
 				write(t(subdata),ncol=length(subdata[1,]),file=in_nam,append=T)  # write data subset with unique task name-tag
-# generate parameted file for structure 
+				
+				# generate parameted file for structure 
 				param_nam=paste('parameter_job_',as.character(id),sep='')
 				out_nam=paste(outpath,'results_job_',as.character(id),sep='')
 				
 				if (onerowperind==0) nind_job=(length(subdata[,1]))/2
 				if (onerowperind==1) nind_job=length(subdata[,1])
-# make list of local parameters 
+				# make list of local parameters 
 				
 				LocPar=list(name_param=param_nam,outfile=out_nam,infile=in_nam,numinds=nind_job,maxpop=k,burnin=burnin,iter=iter)
 				
@@ -219,6 +286,16 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 				shell(instr)
 				instr=paste('del ',in_nam,sep='')
 				shell(instr)
+				
+				#### reverse the pop ID conversion in output q_hat file #####
+				if (usepopinfo==1 & printqhat==1){
+					
+					res_name=paste(out_nam,'_q',sep='')
+					res=as.matrix(read.table(res_name))
+					res[,2]=ID1
+					write(t(res),ncol=length(res[1,]),file=res_name)
+				}
+				#################################################################
 				
 				nr=job$id
 				m1=paste('job ',as.character(nr),sep='')
@@ -233,13 +310,11 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 			
 			
 			
+
 			
-#cl=makeCluster(n_cpu)
-			
-#		mes=paste('made a ',n_cpu,' cluster', sep='')
-#		print(mes)
-			
-#parLapply(cl,tasks,slave_fun)
+##############################
+############ core program ########
+##############################
 			
 		if (Sys.info()['sysname']=="Windows"){
 			slave_fun=slave_fun_windows
@@ -247,7 +322,35 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 			slave_fun=slave_fun_unix
 		}
 			
-			
+			for (i in 1:length(tasks)){
+				
+				job=tasks[[i]]	
+				if (usepopinfo==1){  ####### CHECK concordance of pop_ids with K 
+					## pop_id should be 1 2..n; and n ≤ K 
+					## otherwise STRUCTURE doesn t take pop info into account :
+					##  EG: for K=2 but pop_id=1..3
+					## Warning: population prior for individual 201 is 3, which is not
+					## in the range 1..2.  Population prior for this individual will
+					##	be ignored
+					job_pop=job$job_pop   # list populaiton for this job
+					k=as.character(job$k)
+					T_job_pop=strsplit(job_pop,',')
+					job_pop=T_job_pop[[1]]
+					if (k<length(job_pop) & popflag==0){
+						
+						message='Error : if usepopinfo is ==1 the column of prior population id should be 1..n ; and n ≤ K. e.g., 
+						if you test K=3 make sure your column of pop ID contains no more than three populations, or use popflag to ignore the prior of some population(s)'
+						
+						stop(message)
+						
+					}
+					
+					
+				}
+				
+				
+				
+			}
 	
 			
 		mclapply(tasks,slave_fun,mc.cores=n_cpu)

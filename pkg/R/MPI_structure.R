@@ -27,7 +27,9 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 	
 	# create a list of global parameters common to all jobs. To be shared with slave nodes
 	GlobPar=list(numloci=numloci,label=label,popdata=popdata,popflag=popflag,locdata=locdata,phenotypes=phenotypes,markernames=markernames,mapdist=mapdist,onerowperind=onerowperind,phaseinfo=phaseinfo,recessivealleles=recessivealleles,phased=phased,extracol=extracol,missing=missing,ploidy=ploidy,noadmix=noadmix,linkage=linkage,usepopinfo=usepopinfo,locprior=locprior,inferalpha=inferalpha,alpha=alpha,popalphas=popalphas,unifprioralpha=unifprioralpha,alphamax=alphamax,alphapropsd=alphapropsd,freqscorr=freqscorr,onefst=onefst,fpriormean=fpriormean,fpriorsd=fpriorsd,inferlambda=inferlambda,lambda=lambda,computeprob=computeprob,pfromflagonly=pfromflagonly,ancestdist=ancestdist,startatpopinfo=startatpopinfo,metrofreq=metrofreq,updatefreq=updatefreq,printqhat=printqhat)
-	require(Rmpi)
+	if (!is.loaded("mpi_initialize")) {
+		library("Rmpi")
+	}
 	mes=paste('starting work at ',Sys.time(),sep='')
 	print(mes)
 			
@@ -46,12 +48,12 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 	###############################
 			if (markernames==1){
 				mark_line=as.matrix(read.table(data_name,nrows=1))
-				dat=as.matrix(read.table(data_name,skip=1))
+				dat=as.matrix(read.table(data_name,skip=1,colClasse="character"))
 			}
 			
 			if (markernames==0){
 				mark_line=NULL
-				dat=as.matrix(read.table(data_name))
+				dat=as.matrix(read.table(data_name,colClasse="character"))
 			}
 
 #dat=as.matrix(read.table(data_name))
@@ -81,7 +83,7 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 	tasks=vector('list')
 	for (i in 1:n_tasks){
 		job=job_list[i,]
-		tasks[[i]]=list(id=as.character(job[1]),job_pop=job[2],k=as.character(job[3]),burnin=as.character(job[4]),iter=as.character(job[5]))
+		tasks[[i]]=list(id=as.character(job[1]),job_pop=as.character(job[2]),k=as.character(job[3]),burnin=as.character(job[4]),iter=as.character(job[5]))
 		
 	}
 			
@@ -130,7 +132,7 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 	######### slave function #########
 
 
-	slave_fun_unix=function(){   # 
+			slave_fun_unix=function(){   #						####### UNIX function
 	# Note the use of the tag for sent messages: 
 	#     1=ready_for_task, 2=done_task+result, 3=exiting 
 	# Note the use of the tag for received messages: 
@@ -159,11 +161,22 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 				iter=as.character(job$iter)
 				
 				########################
-				temp_nam=paste('temp_list_job_',as.character(id),sep='')
-				write(job_pop,file=temp_nam)
-				job_pop=as.matrix(read.table(temp_nam,sep=','))
-				instr=paste('rm ',temp_nam,sep='')
-				system(instr)
+				#split list of pop_id
+				
+				T_job_pop=strsplit(job_pop,',')
+				job_pop=T_job_pop[[1]]
+				
+				pop_nr=1:length(job_pop)  
+				if (usepopinfo==1){
+					# number the populations of the given job from 1 to n as STRUCTURE needs pop id that matches 1..K
+					convert=vector('list')
+					for (pop in pop_nr){
+						convert[[job_pop[pop]]]=pop	
+					}
+					
+					
+				}
+				
 				
 				#### create a data subset for the poulations of the given job
 				
@@ -175,11 +188,31 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 					subdata=rbind(subdata,sub)
 				}
 				
+				## replace sub dataset column of popID by converted ids
+				if (usepopinfo==1 & label==1){
+					ID1=subdata[,2]
+					ID2=ID1
+					for (i in 1:length(ID1)){
+						ID2[i]=convert[[ID1[i]]]
+					}
+					subdata[,2]=ID2
+				}
+				if (usepopinfo==1 & label==0){
+					ID1=subdata[,1]
+					ID2=ID1
+					for (i in 1:length(ID1)){
+						ID2[i]=convert[[ID1[i]]]
+					}
+					subdata[,1]=ID2
+				}
+				############################				
 				
 				
+				## write temprary sub data file
 				in_nam=paste('data_job_',id,sep='')
 				if (markernames==1) write(mark_line,ncol=length(mark_line),file=in_nam)  # write markernames
 				write(t(subdata),ncol=length(subdata[1,]),file=in_nam,append=T)  # write data subset with unique task name-tag
+				
 				# generate parameted file for structure 
 				param_nam=paste('parameter_job_',as.character(id),sep='')
 				out_nam=paste(outpath,'results_job_',as.character(id),sep='')
@@ -199,6 +232,16 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 				instr=paste('rm ',in_nam,sep='')
 				system(instr)
 				
+				
+				#### reverse the pop ID conversion in output q_hat file #####
+				if (usepopinfo==1 & printqhat==1){
+				
+					res_name=paste(out_nam,'_q',sep='')
+					res=as.matrix(read.table(res_name))
+					res[,2]=ID1
+					write(t(res),ncol=length(res[1,]),file=res_name)
+				}
+				#################################################################
 				out=list(id=id)
 				mpi.send.Robj(out,0,2)
 				
@@ -215,7 +258,7 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 
 	}
 
-			slave_fun_windows=function(){   # 
+			slave_fun_windows=function(){   #					## WINDOWS function
 # Note the use of the tag for sent messages: 
 #     1=ready_for_task, 2=done_task+result, 3=exiting 
 # Note the use of the tag for received messages: 
@@ -227,30 +270,40 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 				
 				while (done=='F'){
 					
-		# Signal being ready to receive a new task 
+					# Signal being ready to receive a new task 
 					mpi.send.Robj(junk,0,1) 
 					
-# Receive a task 
+					# Receive a task 
 					job <- mpi.recv.Robj(mpi.any.source(),mpi.any.tag()) 
 					job_info <- mpi.get.sourcetag() 
 					tag <- job_info[2] 
 					if (tag==1){  # some job to do
-### gather job infos ###
-#id=as.numeric(job$id)
+					## gather job infos ###
+					#id=as.numeric(job$id)
 						id=job$id
 						job_pop=job$job_pop   # list populaiton for this job
 						k=as.character(job$k)
 						burnin=as.character(job$burnin)
 						iter=as.character(job$iter)
 						
-########################
-						temp_nam=paste('temp_list_job_',as.character(id),sep='')
-						write(job_pop,file=temp_nam)
-						job_pop=as.matrix(read.table(temp_nam,sep=','))
-						instr=paste('del ',temp_nam,sep='')
-						shell(instr)
+						########################
+						#split list of pop_id
 						
-#### create a data subset for the poulations of the given job
+						T_job_pop=strsplit(job_pop,',')
+						job_pop=T_job_pop[[1]]
+						
+						pop_nr=1:length(job_pop)  
+						if (usepopinfo==1){
+						# number the populations of the given job from 1 to n as STRUCTURE needs pop id that matches 1..K
+							convert=vector('list')
+							for (pop in pop_nr){
+								convert[[job_pop[pop]]]=pop	
+							}
+							
+							
+						}
+						
+						#### create a data subset for the populations of the given job
 						
 						subdata=NULL
 						
@@ -260,18 +313,37 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 							subdata=rbind(subdata,sub)
 						}
 						
+						## replace sub dataset column of popID by converted ids
+						if (usepopinfo==1 & label==1){
+							ID1=subdata[,2]
+							ID2=ID1
+							for (i in 1:length(ID1)){
+								ID2[i]=convert[[ID1[i]]]
+							}
+							subdata[,2]=ID2
+						}
+						if (usepopinfo==1 & label==0){
+							ID1=subdata[,1]
+							ID2=ID1
+							for (i in 1:length(ID1)){
+								ID2[i]=convert[[ID1[i]]]
+							}
+							subdata[,1]=ID2
+						}
+						############################	
 						
 						
+						## write temporary sub data file
 						in_nam=paste('data_job_',id,sep='')
 						if (markernames==1) write(mark_line,ncol=length(mark_line),file=in_nam)  # write markernames
 						write(t(subdata),ncol=length(subdata[1,]),file=in_nam,append=T)  # write data subset with unique task name-tag
-# generate parameted file for structure 
+						# generate parameted file for structure 
 						param_nam=paste('parameter_job_',as.character(id),sep='')
 						out_nam=paste(outpath,'results_job_',as.character(id),sep='')
 						
 						if (onerowperind==0) nind_job=(length(subdata[,1]))/2
 						if (onerowperind==1) nind_job=length(subdata[,1])
-# make list of local parameters 
+						# make list of local parameters 
 						LocPar=list(name_param=param_nam,outfile=out_nam,infile=in_nam,numinds=nind_job,maxpop=k,burnin=burnin,iter=iter)
 						
 						edit_params(GlobPar=GlobPar,LocPar=LocPar)  # edit the parameter file for this particular job
@@ -284,6 +356,15 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 						instr=paste('del ',in_nam,sep='')
 						shell(instr)
 						
+						#### reverse the pop ID conversion in output q_hat file #####
+						if (usepopinfo==1 & printqhat==1){
+							
+							res_name=paste(out_nam,'_q',sep='')
+							res=as.matrix(read.table(res_name))
+							res[,2]=ID1
+							write(t(res),ncol=length(res[1,]),file=res_name)
+						}
+						#################################################################
 						out=list(id=id)
 						mpi.send.Robj(out,0,2)
 						
@@ -301,8 +382,19 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 			}
 			
 			
-
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+	##############################
 	############ core program ########
+	##############################
 	junk=0
 	done_slaves=0   # number of unemployed slaves
 	n_slaves <- mpi.comm.size()-1
@@ -318,13 +410,17 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 	mpi.bcast.Robj2slave(markernames)
 	mpi.bcast.Robj2slave(mark_line)
 	mpi.bcast.Robj2slave(label)
+	mpi.bcast.Robj2slave(usepopinfo)
+	mpi.bcast.Robj2slave(printqhat)
+			
+	####### Get system info and assign corresponding slave function (Windows/unix)
 	if (Sys.info()['sysname']=="Windows"){
 		slave_fun=slave_fun_windows
 	} else {
 		slave_fun=slave_fun_unix
 	}
 			
-
+	###################################
 	mpi.bcast.Robj2slave(slave_fun)
 	mpi.bcast.cmd(slave_fun())
 	
@@ -344,7 +440,30 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 			# slave is ready for a task. Give it the next task, or tell it tasks 
 			# are done if there are none. 
 			if (length(tasks) > 0) {  # there is still job to do
-				
+				job=tasks[[1]]
+				if (usepopinfo==1){  ####### CHECK concordance of pop_ids with K 
+					## pop_id should be 1 2..n; and n ≤ K 
+					## otherwise STRUCTURE doesn t take pop info into account :
+					##  EG: for K=2 but pop_id=1..3
+					## Warning: population prior for individual 201 is 3, which is not
+					## in the range 1..2.  Population prior for this individual will
+					##	be ignored
+					job_pop=job$job_pop   # list populaiton for this job
+					k=as.character(job$k)
+					T_job_pop=strsplit(job_pop,',')
+					job_pop=T_job_pop[[1]]
+					if (k<length(job_pop) & popflag==0){
+						
+						message='Error : if usepopinfo is ==1 the column of prior population id should be 1..n ; and n ≤ K. e.g., 
+						if you test K=3 make sure your column of pop ID contains no more than three populations, or use popflag to ignore the prior of some population(s)'
+						.Call("mpi_finalize")
+						stop(message)
+						
+					}
+					
+					
+				}
+				### if pop id OK, send job to salve node
 				mpi.send.Robj(tasks[[1]], slave_id, 1)
 	
 				tasks[[1]] = NULL
