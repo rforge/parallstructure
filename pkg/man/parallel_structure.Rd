@@ -92,8 +92,108 @@ MPI_structure(joblist = NULL, n_cpu = NULL, structure_path = Mac_path, infile = 
   \item{usepopinfo}{
     Use prior population information to assist clustering  1 = Yes; 0 = No.
 }
+ \item{revert_convert}{
+   If usepopinfo=1, will convert population IDs back into the original data file IDs. 1 = Yes; 0 = No.
+}
   \item{printqhat}{
      the point estimate for  is not only printed into the main results file, but also into a separate file with suffix ``q''. 1 = Yes; 0 = No. This file is required in order to run the companion program STRAT and to automatically generate graphic output (see plot_output).
+}
+
+
+ \item{locdata}{
+     1 = Yes; 0 = No.
+}
+
+ \item{recessivealleles}{
+     1 = Yes; 0 = No.
+}
+
+ \item{phased}{
+     1 = Yes; 0 = No.
+}
+
+ \item{noadmix}{
+     1 = Yes; 0 = No.
+}
+
+ \item{linkage}{
+     1 = Yes; 0 = No.
+}
+
+ \item{locprior}{
+     1 = Yes; 0 = No.
+}
+
+ \item{inferalpha}{
+     1 = Yes; 0 = No.
+}
+
+ \item{alpha}{
+     value of alpha (default = 1.0)
+}
+
+ \item{popalphas}{
+    infer separate alpha for each population 1 = Yes; 0 = No.
+}
+
+ \item{unifprioralpha}{
+     1 = Yes; 0 = No.
+}
+
+ \item{alphamax}{
+     (maximum value of alpha (default = 10.0))
+}
+
+ \item{alphapropsd}{
+     
+}
+
+ \item{freqscorr}{
+     
+}
+
+ \item{onefst}{
+     
+}
+
+ \item{fpriormean}{
+     
+}
+
+ \item{fpriorsd}{
+     
+}
+
+ \item{inferlambda}{
+     1 = Yes; 0 = No.
+}
+
+ \item{lambda}{
+     
+}
+
+ \item{computeprob}{
+     
+}
+
+ \item{pfromflagonly}{
+     1 = Yes; 0 = No. makes it possible to update the allele frequencies, P , using only a prespecified subset of the individuals. To use this, include a POPFLAG column, and set POPFLAG=1 for individuals who should be used to update , and POPFLAG=0 for individuals who should not be used to update P
+}
+
+ \item{ancestdist}{
+     
+}
+
+ \item{startatpopinfo}{
+     
+}
+
+ \item{metrofreq}{
+     
+}
+
+ \item{updatefreq}{
+     
 }
 
   \item{...}{

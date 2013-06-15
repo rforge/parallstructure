@@ -23,10 +23,16 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 		recessivealleles=0,phased=0,extracol=0,missing=-9,ploidy=2,noadmix=0,linkage=0,usepopinfo=0,locprior=0,
 		inferalpha=1,alpha=1.0,popalphas=0,unifprioralpha=1,alphamax=10.0,alphapropsd=0.025,freqscorr=1,onefst=0,
 		fpriormean=0.01,fpriorsd=0.05,inferlambda=0,lambda=1.0,computeprob=1,pfromflagonly=0,ancestdist=0,
-		startatpopinfo=0,metrofreq=10,updatefreq=1,printqhat=0){
+		startatpopinfo=0,metrofreq=10,updatefreq=1,printqhat=0,revert_convert=0){
 	
 	# create a list of global parameters common to all jobs. To be shared with slave nodes
-	GlobPar=list(numloci=numloci,label=label,popdata=popdata,popflag=popflag,locdata=locdata,phenotypes=phenotypes,markernames=markernames,mapdist=mapdist,onerowperind=onerowperind,phaseinfo=phaseinfo,recessivealleles=recessivealleles,phased=phased,extracol=extracol,missing=missing,ploidy=ploidy,noadmix=noadmix,linkage=linkage,usepopinfo=usepopinfo,locprior=locprior,inferalpha=inferalpha,alpha=alpha,popalphas=popalphas,unifprioralpha=unifprioralpha,alphamax=alphamax,alphapropsd=alphapropsd,freqscorr=freqscorr,onefst=onefst,fpriormean=fpriormean,fpriorsd=fpriorsd,inferlambda=inferlambda,lambda=lambda,computeprob=computeprob,pfromflagonly=pfromflagonly,ancestdist=ancestdist,startatpopinfo=startatpopinfo,metrofreq=metrofreq,updatefreq=updatefreq,printqhat=printqhat)
+	GlobPar=list(numloci=numloci,label=label,popdata=popdata,popflag=popflag,locdata=locdata,phenotypes=phenotypes,
+				 markernames=markernames,mapdist=mapdist,onerowperind=onerowperind,phaseinfo=phaseinfo,recessivealleles=recessivealleles,
+				 phased=phased,extracol=extracol,missing=missing,ploidy=ploidy,noadmix=noadmix,linkage=linkage,usepopinfo=usepopinfo,
+				 locprior=locprior,inferalpha=inferalpha,alpha=alpha,popalphas=popalphas,unifprioralpha=unifprioralpha,alphamax=alphamax,
+				 alphapropsd=alphapropsd,freqscorr=freqscorr,onefst=onefst,fpriormean=fpriormean,fpriorsd=fpriorsd,inferlambda=inferlambda,
+				 lambda=lambda,computeprob=computeprob,pfromflagonly=pfromflagonly,ancestdist=ancestdist,startatpopinfo=startatpopinfo,
+				 metrofreq=metrofreq,updatefreq=updatefreq,printqhat=printqhat)
 	if (!is.loaded("mpi_initialize")) {
 		library("Rmpi")
 	}
@@ -48,12 +54,12 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 	###############################
 			if (markernames==1){
 				mark_line=as.matrix(read.table(data_name,nrows=1))
-				dat=as.matrix(read.table(data_name,skip=1,colClasse="character"))
+				dat=as.matrix(read.table(data_name,skip=1,colClasses="character"))
 			}
 			
 			if (markernames==0){
 				mark_line=NULL
-				dat=as.matrix(read.table(data_name,colClasse="character"))
+				dat=as.matrix(read.table(data_name,colClasses="character"))
 			}
 
 #dat=as.matrix(read.table(data_name))
@@ -170,8 +176,10 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 				if (usepopinfo==1){
 					# number the populations of the given job from 1 to n as STRUCTURE needs pop id that matches 1..K
 					convert=vector('list')
+					rev_convert=vector('list')
 					for (pop in pop_nr){
 						convert[[job_pop[pop]]]=pop	
+						rev_convert[[as.character(pop)]]=job_pop[pop]
 					}
 					
 					
@@ -210,8 +218,8 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 				
 				## write temprary sub data file
 				in_nam=paste('data_job_',id,sep='')
-				if (markernames==1) write(mark_line,ncol=length(mark_line),file=in_nam)  # write markernames
-				write(t(subdata),ncol=length(subdata[1,]),file=in_nam,append=T)  # write data subset with unique task name-tag
+				if (markernames==1) write(mark_line,ncolumns=length(mark_line),file=in_nam)  # write markernames
+				write(t(subdata),ncolumns=length(subdata[1,]),file=in_nam,append=T)  # write data subset with unique task name-tag
 				
 				# generate parameted file for structure 
 				param_nam=paste('parameter_job_',as.character(id),sep='')
@@ -233,13 +241,18 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 				system(instr)
 				
 				
-				#### reverse the pop ID conversion in output q_hat file #####
-				if (usepopinfo==1 & printqhat==1){
-				
-					res_name=paste(out_nam,'_q',sep='')
-					res=as.matrix(read.table(res_name))
-					res[,2]=ID1
-					write(t(res),ncol=length(res[1,]),file=res_name)
+				#### reverse the pop ID conversion in output _q and _f file #####
+				if (usepopinfo==1 & revert_convert==1){
+					ID3=ID1
+					if (onerowperind==0){
+					
+							filter=rep(c(1,0),nind_job)
+							ID3=ID1[filter==1]
+							
+						
+					}
+					convert_IDs(ID1=ID3,out_nam=out_nam,rev_convert=rev_convert,printqhat=GlobPar$printqhat,k=as.numeric(k))
+					
 				}
 				#################################################################
 				out=list(id=id)
@@ -296,8 +309,10 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 						if (usepopinfo==1){
 						# number the populations of the given job from 1 to n as STRUCTURE needs pop id that matches 1..K
 							convert=vector('list')
+							rev_convert=vector('list')
 							for (pop in pop_nr){
-								convert[[job_pop[pop]]]=pop	
+								convert[[job_pop[pop]]]=pop
+								rev_convert[[as.character(pop)]]=job_pop[pop]
 							}
 							
 							
@@ -313,7 +328,7 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 							subdata=rbind(subdata,sub)
 						}
 						
-						## replace sub dataset column of popID by converted ids
+						## replace sub dataset column of popID by converted ids (only if use popinfo)
 						if (usepopinfo==1 & label==1){
 							ID1=subdata[,2]
 							ID2=ID1
@@ -335,8 +350,8 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 						
 						## write temporary sub data file
 						in_nam=paste('data_job_',id,sep='')
-						if (markernames==1) write(mark_line,ncol=length(mark_line),file=in_nam)  # write markernames
-						write(t(subdata),ncol=length(subdata[1,]),file=in_nam,append=T)  # write data subset with unique task name-tag
+						if (markernames==1) write(mark_line,ncolumns=length(mark_line),file=in_nam)  # write markernames
+						write(t(subdata),ncolumns=length(subdata[1,]),file=in_nam,append=T)  # write data subset with unique task name-tag
 						# generate parameted file for structure 
 						param_nam=paste('parameter_job_',as.character(id),sep='')
 						out_nam=paste(outpath,'results_job_',as.character(id),sep='')
@@ -356,13 +371,18 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 						instr=paste('del ',in_nam,sep='')
 						shell(instr)
 						
-						#### reverse the pop ID conversion in output q_hat file #####
-						if (usepopinfo==1 & printqhat==1){
+						#### reverse the pop ID conversion in output _q and _f file #####
+						if (usepopinfo==1 & revert_convert==1){
+							ID3=ID1
+							if (onerowperind==0){
+								
+								filter=rep(c(1,0),nind_job)
+								ID3=ID1[filter==1]
+								
+								
+							}
+							convert_IDs(ID1=ID3,out_nam=out_nam,rev_convert=rev_convert,printqhat=GlobPar$printqhat,k=as.numeric(k))
 							
-							res_name=paste(out_nam,'_q',sep='')
-							res=as.matrix(read.table(res_name))
-							res[,2]=ID1
-							write(t(res),ncol=length(res[1,]),file=res_name)
 						}
 						#################################################################
 						out=list(id=id)
@@ -412,6 +432,8 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 	mpi.bcast.Robj2slave(label)
 	mpi.bcast.Robj2slave(usepopinfo)
 	mpi.bcast.Robj2slave(printqhat)
+	mpi.bcast.Robj2slave(revert_convert)
+			
 			
 	####### Get system info and assign corresponding slave function (Windows/unix)
 	if (Sys.info()['sysname']=="Windows"){
@@ -513,4 +535,35 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 		plot_str(loc=outpath,list_id,20,8)
 			
 	}
+			
+######## generate summary table of results ############
+	summary_res=matrix(0,(length(ALL_tasks)+1),8)
+	l1=c('run_id','burnin','iterations','k','ln_prob_data','mean_llh','var_llh','mean_alpha')  # column title
+	summary_res[1,]=l1
+			
+			
+	for (i in 1:length(ALL_tasks)){
+		job=ALL_tasks[[i]]
+		res_file=paste(outpath,'results_job_',job$id,'_f',sep='')
+		res=as.matrix(read.table(res_file,fill=T,sep='',strip.white=T))
+		
+		ref_line=NULL
+		for (j in 1:length(res[,1])){
+			ans=paste(res[j,1],' ',res[j,2],' ',res[j,3],' ',res[j,4],sep='')  # fish for the relevant line in the result file
+			if (ans=='Estimated Ln Prob of') ref_line=j
+		}
+		Ln_P_data=res[ref_line,7]
+		mean_llh=res[(ref_line+1),7]
+		Var_llh=res[(ref_line+2),6]
+		mean_alpha=res[(ref_line+3),6]
+		
+		
+		l=c(job$id,job$burnin,job$iter,job$k,Ln_P_data,mean_llh,Var_llh,mean_alpha)
+		summary_res[(i+1),]=l
+		
+		
+	}
+	
+	write.csv(summary_res,file='results_summary.csv')
+######################################################
 }
