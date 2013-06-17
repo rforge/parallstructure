@@ -1,6 +1,5 @@
 convert_IDs <-
 function(ID1=NULL,out_nam=NULL,rev_convert=NULL,printqhat=NULL,k=NULL){
-	write(ID1,ncol=1,file='ID.txt')
 		
 	if (printqhat==1){
 		

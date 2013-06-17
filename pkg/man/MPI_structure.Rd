@@ -28,7 +28,7 @@ MPI_structure(joblist = NULL, n_cpu = NULL, structure_path = Mac_path, infile = 
   
   onefst = 0, fpriormean = 0.01, fpriorsd = 0.05, inferlambda = 0, lambda = 1, computeprob = 1, 
   
-  pfromflagonly = 0, ancestdist = 0, startatpopinfo = 0, metrofreq = 10, updatefreq = 1, printqhat = 0)
+  pfromflagonly = 0, ancestdist = 0, startatpopinfo = 0, metrofreq = 10, updatefreq = 1, printqhat = 0,revert_convert=0)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
