@@ -28,7 +28,9 @@ MPI_structure(joblist = NULL, n_cpu = NULL, structure_path = Mac_path, infile = 
   
   onefst = 0, fpriormean = 0.01, fpriorsd = 0.05, inferlambda = 0, lambda = 1, computeprob = 1, 
   
-  pfromflagonly = 0, ancestdist = 0, startatpopinfo = 0, metrofreq = 10, updatefreq = 1, printqhat = 0,revert_convert=0)
+  pfromflagonly = 0, ancestdist = 0, startatpopinfo = 0, metrofreq = 10, updatefreq = 1, printqhat = 0,revert_convert=0,
+  
+  randomize=1)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -188,6 +190,10 @@ MPI_structure(joblist = NULL, n_cpu = NULL, structure_path = Mac_path, infile = 
      
 }
 
+ \item{randomize}{ 1=yes; 0= No. Use a different random number seed for each run (this is taken from the system clock).
+     
+}
+
  \item{metrofreq}{
      
 }
@@ -207,7 +213,7 @@ The function uses \link{parallel-package} to pilot serial STRUCTURE jobs in para
 }
 \references{
 
-Besnier F, Glover KA ParallelStructure: a R package to distribute parallel runs of the population genetics program STRUCTURE on multi-core computers. submitted
+Besnier F, Glover KA (2013) ParallelStructure: A R Package to Distribute Parallel Runs of the Population Genetics Program STRUCTURE on Multi-Core Computers. PLoS ONE 8(7): e70651. doi:10.1371/journal.pone.0070651
 
 
 \link{parallel-package} 

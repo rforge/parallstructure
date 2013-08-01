@@ -45,7 +45,7 @@ francois.besnier@imr.no
 }
 \references{
 
-Besnier F, Glover KA ParallelStructure: a R package to distribute parallel runs of the population genetics program STRUCTURE on multi-core computers. To be submitted
+Besnier F, Glover KA (2013) ParallelStructure: A R Package to Distribute Parallel Runs of the Population Genetics Program STRUCTURE on Multi-Core Computers. PLoS ONE 8(7): e70651. doi:10.1371/journal.pone.0070651
 
 RMPI website: http://www.stats.uwo.ca/faculty/yu/Rmpi/
 
