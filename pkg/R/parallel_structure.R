@@ -80,7 +80,7 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 						
 	#### Import job list ##########
 						
-	job_list=as.matrix(read.table(joblist))
+	job_list=as.matrix(read.table(joblist,colClasses='character'))
 	n_tasks=length(job_list[,1])
 	tasks=vector('list')
 	for (i in 1:n_tasks){
