@@ -16,7 +16,7 @@ TWO inputs are give to the MPI_structure function:
 
 }
 \usage{
-MPI_structure(joblist = NULL, n_cpu = NULL, structure_path = Mac_path, infile = NULL, outpath = NULL,
+MPI_structure(joblist = NULL, n_cpu = NULL, structure_path = Mac_path, infile = NULL, outpath = NULL,get_log=1,
 
  numinds = NULL, numloci = NULL, plot_output = 1, label = 1, popdata = 1, popflag = 0, locdata = 0, 
  
@@ -49,6 +49,10 @@ MPI_structure(joblist = NULL, n_cpu = NULL, structure_path = Mac_path, infile = 
   \item{outpath}{
     location of folder to write the output files
 }
+ \item{get_log}{
+    Ask Rmpi to generate .log files for each slave cpu standard output.  1 = Yes; 0 = No. (yes is Nice for debugging, but can make heavy .log files for long analyses)
+}
+
   \item{numinds}{
     Number of individuals in data file
 }

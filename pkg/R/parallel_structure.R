@@ -67,7 +67,7 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 			Npop=length(list_all_pop)
 
 						
-			if (onerowperind==0) nind=(length(dat[,1]))/2
+			if (onerowperind==0) nind=(length(dat[,1]))/ploidy
 			if (onerowperind==1) nind=length(dat[,1])
 			
 			
@@ -192,7 +192,7 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 		param_nam=paste('parameter_job_',as.character(id),sep='')
 		out_nam=paste(outpath,'results_job_',as.character(id),sep='')
 		
-		if (onerowperind==0) nind_job=(length(subdata[,1]))/2
+		if (onerowperind==0) nind_job=(length(subdata[,1]))/ploidy
 		if (onerowperind==1) nind_job=length(subdata[,1])
 		# make list of local parameters 
 		
@@ -301,7 +301,7 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 				param_nam=paste('parameter_job_',as.character(id),sep='')
 				out_nam=paste(outpath,'results_job_',as.character(id),sep='')
 				
-				if (onerowperind==0) nind_job=(length(subdata[,1]))/2
+				if (onerowperind==0) nind_job=(length(subdata[,1]))/ploidy
 				if (onerowperind==1) nind_job=length(subdata[,1])
 				# make list of local parameters 
 				

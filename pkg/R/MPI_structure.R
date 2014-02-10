@@ -18,7 +18,7 @@
 
 
 MPI_structure <-
-function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NULL,numinds=NULL,numloci=NULL,
+function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NULL,numinds=NULL,numloci=NULL,get_log=1,
 		plot_output=1,label=1,popdata=1,popflag=0,locdata=0,phenotypes=0,markernames=0,mapdist=0,onerowperind=0,phaseinfo=0,
 		recessivealleles=0,phased=0,extracol=0,missing=-9,ploidy=2,noadmix=0,linkage=0,usepopinfo=0,locprior=0,
 		inferalpha=1,alpha=1.0,popalphas=0,unifprioralpha=1,alphamax=10.0,alphapropsd=0.025,freqscorr=1,onefst=0,
@@ -71,7 +71,7 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 	Npop=length(list_all_pop)
 
 						
-	if (onerowperind==0) nind=(length(dat[,1]))/2
+	if (onerowperind==0) nind=(length(dat[,1]))/ploidy
 	if (onerowperind==1) nind=length(dat[,1])
 							
 	
@@ -119,7 +119,8 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 	
 		
 	####### call n_cpu nodes #####
-	mpi.spawn.Rslaves(nslaves=n_cpu)
+			if (get_log==0) mpi.spawn.Rslaves(nslaves=n_cpu,needlog=FALSE)
+			if (get_log==1) mpi.spawn.Rslaves(nslaves=n_cpu)
 
 
 	#### close nodes in case R crashes ######
@@ -225,7 +226,7 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 				param_nam=paste('parameter_job_',as.character(id),sep='')
 				out_nam=paste(outpath,'results_job_',as.character(id),sep='')
 				
-				if (onerowperind==0) nind_job=(length(subdata[,1]))/2
+				if (onerowperind==0) nind_job=(length(subdata[,1]))/GlobPar$ploidy
 				if (onerowperind==1) nind_job=length(subdata[,1])
 				# make list of local parameters 
 				LocPar=list(name_param=param_nam,outfile=out_nam,infile=in_nam,numinds=nind_job,maxpop=k,burnin=burnin,iter=iter)
@@ -356,7 +357,7 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 						param_nam=paste('parameter_job_',as.character(id),sep='')
 						out_nam=paste(outpath,'results_job_',as.character(id),sep='')
 						
-						if (onerowperind==0) nind_job=(length(subdata[,1]))/2
+						if (onerowperind==0) nind_job=(length(subdata[,1]))/GlobPar$ploidy
 						if (onerowperind==1) nind_job=length(subdata[,1])
 						# make list of local parameters 
 						LocPar=list(name_param=param_nam,outfile=out_nam,infile=in_nam,numinds=nind_job,maxpop=k,burnin=burnin,iter=iter)

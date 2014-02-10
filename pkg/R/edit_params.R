@@ -143,7 +143,9 @@ function(LocPar,GlobPar){
 	
 	l=paste('#define PRINTQHAT ',as.character(GlobPar$printqhat),sep='')
 	write(l,file=LocPar$name_param,append=T)
-	
+
+	l=paste('#define RANDOMIZE ',as.character(GlobPar$randomize),sep='')
+	write(l,file=LocPar$name_param,append=T)
 		
 	
 
