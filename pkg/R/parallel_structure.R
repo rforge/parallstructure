@@ -52,12 +52,26 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 	###############################
 
 
-			if (markernames==1){
+			if (markernames==1 & recessivealleles==0){
 				mark_line=as.matrix(read.table(data_name,nrows=1))
+				recess_line=NULL
 				dat=as.matrix(read.table(data_name,skip=1,colClasses="character"))
 			}
 			
-			if (markernames==0){
+			if (markernames==1 & recessivealleles==1){
+				mark_line=as.matrix(read.table(data_name,nrows=1))
+				recess_line=as.matrix(read.table(data_name,skip=1,nrows=1))
+				dat=as.matrix(read.table(data_name,skip=2,colClasses="character"))
+			}
+			
+			if (markernames==0 & recessivealleles==0){
+				recess_line=NULL
+				mark_line=NULL
+				dat=as.matrix(read.table(data_name,colClasses="character"))
+			}
+			
+			if (markernames==0 & recessivealleles==1){
+				recess_line=as.matrix(read.table(data_name,nrows=1))
 				mark_line=NULL
 				dat=as.matrix(read.table(data_name,colClasses="character"))
 			}
@@ -185,6 +199,7 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 		## write temprary sub data file
 		in_nam=paste('data_job_',id,sep='')
 		if (markernames==1) write(mark_line,ncolumns=length(mark_line),file=in_nam)  # write markernames
+		if (recessivealleles==1) write(recess_line,ncolumns=length(recess_line),file=in_nam,append=T)
 		write(t(subdata),ncolumns=length(subdata[1,]),file=in_nam,append=T)  # write data subset with unique task name-tag
 		
 		
@@ -295,6 +310,7 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 				## write temporary sub data file
 				in_nam=paste('data_job_',id,sep='')
 				if (markernames==1) write(mark_line,ncolumns=length(mark_line),file=in_nam)  # write markernames
+				if (recessivealleles==1) write(recess_line,ncolumns=length(recess_line),file=in_nam,append=T)
 				write(t(subdata),ncolumns=length(subdata[1,]),file=in_nam,append=T)  # write data subset with unique task name-tag
 				
 				# generate parameted file for structure 
