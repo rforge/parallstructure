@@ -2,7 +2,7 @@ edit_params <-
 function(LocPar,GlobPar){
 
 
-	out=paste(getwd(),'/',LocPar$outfile,sep='')
+	out=LocPar$outfile
 	l=paste('#define OUTFILE ',out,sep='')
 	write(l,file=LocPar$name_param)
 	
@@ -34,7 +34,7 @@ function(LocPar,GlobPar){
 	l=paste('#define MARKERNAMES ',as.character(GlobPar$markernames),sep='')
 	write(l,file=LocPar$name_param,append=T)
 	
-	l=paste('#define MAPDISTANCES ',as.character(GlobPar$mapdistances),sep='')
+	l=paste('#define MAPDISTANCES ',as.character(GlobPar$mapdist),sep='')
 	write(l,file=LocPar$name_param,append=T)
 	
 	l=paste('#define ONEROWPERIND ',as.character(GlobPar$onerowperind),sep='')
@@ -146,7 +146,20 @@ function(LocPar,GlobPar){
 
 	l=paste('#define RANDOMIZE ',as.character(GlobPar$randomize),sep='')
 	write(l,file=LocPar$name_param,append=T)
-		
+    
+    l=paste('#define LOG10RSTART ',as.character(GlobPar$log10Rstart),sep='')
+    write(l,file=LocPar$name_param,append=T)
+    
+    l=paste('#define LOG10RMIN ',as.character(GlobPar$log10Rmin),sep='')
+    write(l,file=LocPar$name_param,append=T)
+    l=paste('#define LOG10RMAX ',as.character(GlobPar$log10Rmax),sep='')
+    write(l,file=LocPar$name_param,append=T)
+    l=paste('#define LOG10RPROPSD ',as.character(GlobPar$log10Rpropsd),sep='')
+    write(l,file=LocPar$name_param,append=T)
+
+    l=paste('#define SEED ',as.character(GlobPar$seed),sep='')
+    write(l,file=LocPar$name_param,append=T)
+    
 	
 
 	

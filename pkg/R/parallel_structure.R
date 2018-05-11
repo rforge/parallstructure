@@ -21,7 +21,7 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 		recessivealleles=0,phased=0,extracol=0,missing=-9,ploidy=2,noadmix=0,linkage=0,usepopinfo=0,locprior=0,
 		inferalpha=1,alpha=1.0,popalphas=0,unifprioralpha=1,alphamax=10.0,alphapropsd=0.025,freqscorr=1,onefst=0,
 		fpriormean=0.01,fpriorsd=0.05,inferlambda=0,lambda=1.0,computeprob=1,pfromflagonly=0,ancestdist=0,
-		startatpopinfo=0,metrofreq=10,updatefreq=1,printqhat=0,revert_convert=0,randomize=1){
+		startatpopinfo=0,metrofreq=10,updatefreq=1,printqhat=0,revert_convert=0,randomize=1,seed=1234,log10Rstart=NULL,log10Rmin=NULL,log10Rmax=NULL,log10Rpropsd=NULL){
 			
 	
 		require(parallel)
@@ -32,7 +32,7 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 				 noadmix=noadmix,linkage=linkage,usepopinfo=usepopinfo,locprior=locprior,inferalpha=inferalpha,alpha=alpha,popalphas=popalphas,
 				 unifprioralpha=unifprioralpha,alphamax=alphamax,alphapropsd=alphapropsd,freqscorr=freqscorr,onefst=onefst,fpriormean=fpriormean,fpriorsd=fpriorsd,
 				 inferlambda=inferlambda,lambda=lambda,computeprob=computeprob,pfromflagonly=pfromflagonly,ancestdist=ancestdist,startatpopinfo=startatpopinfo,
-				 metrofreq=metrofreq,updatefreq=updatefreq,printqhat=printqhat,randomize=randomize)
+				 metrofreq=metrofreq,updatefreq=updatefreq,printqhat=printqhat,randomize=randomize,seed=seed,log10Rstart=log10Rstart,log10Rmin=log10Rmin,log10Rmax=log10Rmax,log10Rpropsd=log10Rpropsd)
 
 	mes=paste('starting work at ',Sys.time(),sep='')
 	print(mes)
@@ -52,29 +52,42 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 	###############################
 
 
-			if (markernames==1 & recessivealleles==0){
+			if (markernames==1 & recessivealleles==0 & linkage==0){
 				mark_line=as.matrix(read.table(data_name,nrows=1))
 				recess_line=NULL
 				dat=as.matrix(read.table(data_name,skip=1,colClasses="character"))
 			}
 			
-			if (markernames==1 & recessivealleles==1){
+			if (markernames==1 & recessivealleles==1 & linkage==0){
 				mark_line=as.matrix(read.table(data_name,nrows=1))
 				recess_line=as.matrix(read.table(data_name,skip=1,nrows=1))
 				dat=as.matrix(read.table(data_name,skip=2,colClasses="character"))
 			}
 			
-			if (markernames==0 & recessivealleles==0){
+			if (markernames==0 & recessivealleles==0 & linkage==0){
 				recess_line=NULL
 				mark_line=NULL
 				dat=as.matrix(read.table(data_name,colClasses="character"))
 			}
 			
-			if (markernames==0 & recessivealleles==1){
+			if (markernames==0 & recessivealleles==1 & linkage==0){
 				recess_line=as.matrix(read.table(data_name,nrows=1))
 				mark_line=NULL
-				dat=as.matrix(read.table(data_name,colClasses="character"))
+				dat=as.matrix(read.table(data_name,skip=1,colClasses="character"))
 			}
+            
+            if (mapdist==1){
+                mark_line=as.matrix(read.table(data_name,nrows=1))
+                position_line=as.matrix(read.table(data_name,skip=1,nrows=1)) # assumes that if mapdist is given then marker names are given also
+                dat=as.matrix(read.table(data_name,skip=2,colClasses="character"))
+                print('Warning: in the current implementation, ParallelStructure assumes that if linkage is given, marker names are also given: markernames=1 and recessivealleles=0')
+                
+            }
+            
+            if (linkage==1 & mapdist==0) print('Warning: linkage model is specified without mapdistance')
+            
+            
+            
 # list_all_pop=unique(dat[,1])  # 08042013
 			if (label==1) list_all_pop=unique(dat[,2])
 			if (label==0) list_all_pop=unique(dat[,1])
@@ -198,8 +211,15 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 		############################	
 		## write temprary sub data file
 		in_nam=paste('data_job_',id,sep='')
-		if (markernames==1) write(mark_line,ncolumns=length(mark_line),file=in_nam)  # write markernames
-		if (recessivealleles==1) write(recess_line,ncolumns=length(recess_line),file=in_nam,append=T)
+		if (markernames==1 & linkage==0) write(mark_line,ncolumns=length(mark_line),file=in_nam)  # write markernames
+		if (recessivealleles==1 & linkage==0) write(recess_line,ncolumns=length(recess_line),file=in_nam,append=T)
+        
+        if (mapdist==1) {
+            write(mark_line,ncolumns=length(mark_line),file=in_nam)
+            write(position_line,ncolumns=length(position_line),file=in_nam,append=T)
+            
+        }
+        
 		write(t(subdata),ncolumns=length(subdata[1,]),file=in_nam,append=T)  # write data subset with unique task name-tag
 		
 		
@@ -309,8 +329,16 @@ function(joblist=NULL,n_cpu=NULL,structure_path=Mac_path,infile=NULL,outpath=NUL
 				############################
 				## write temporary sub data file
 				in_nam=paste('data_job_',id,sep='')
-				if (markernames==1) write(mark_line,ncolumns=length(mark_line),file=in_nam)  # write markernames
-				if (recessivealleles==1) write(recess_line,ncolumns=length(recess_line),file=in_nam,append=T)
+				if (markernames==1 & linkage==0) write(mark_line,ncolumns=length(mark_line),file=in_nam)  # write markernames
+				if (recessivealleles==1 & linkage==0) write(recess_line,ncolumns=length(recess_line),file=in_nam,append=T)
+                
+                if (mapdist==1) {
+                    write(mark_line,ncolumns=length(mark_line),file=in_nam)
+                    write(position_line,ncolumns=length(position_line),file=in_nam,append=T)
+                    
+                }
+                
+
 				write(t(subdata),ncolumns=length(subdata[1,]),file=in_nam,append=T)  # write data subset with unique task name-tag
 				
 				# generate parameted file for structure 
